@@ -1,0 +1,42 @@
+{
+  "name": "iap-promo",
+  "version": "0.1.0",
+  "description": "Generate App Store-compliant promoted In-App Purchase images (1024x1024, original art — not screenshots). Avoids Apple Guideline 2.3.2 rejections.",
+  "type": "module",
+  "bin": {
+    "iap-promo": "bin/iap-promo.mjs"
+  },
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "src",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "app-store",
+    "app-store-connect",
+    "in-app-purchase",
+    "iap",
+    "promoted-iap",
+    "promotional-image",
+    "guideline-2.3.2",
+    "aso",
+    "expo",
+    "react-native"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "sharp": "^0.34.0"
+  },
+  "scripts": {
+    "example": "node bin/iap-promo.mjs --title \"My App Premium\" --badge PREMIUM --subtitle \"Unlock everything\" --benefits \"No ads|Offline mode|Pro themes\" --price \"$2.99/mo\" --theme ocean --out example.png"
+  }
+}
