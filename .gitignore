@@ -1,4 +1,5 @@
 node_modules/
+dist/
 *.log
 # generated output at the repo root (docs/ examples are kept for the README)
 /example.png

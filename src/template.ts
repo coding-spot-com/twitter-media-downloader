@@ -1,14 +1,30 @@
-// Template "card": fundo com padrão + brilho, marca (ícone ou monograma) num
-// cartão cerâmico, badge de destaque, título, subtítulo, painel de benefícios
-// com checks, e preço. Constrói um SVG 1024×1024 puro (depois renderizado em PNG).
+// "card" template: patterned background + glow, a mark (icon or monogram) on a
+// ceramic card, a highlight badge, title, subtitle, a benefits panel with
+// checks, and a price. Builds a pure 1024x1024 SVG (later rendered to PNG).
 
-function esc(s) {
+import type { Theme } from './themes.js';
+
+/** Fully-resolved config the template renders from. */
+export interface RenderConfig {
+  title: string;
+  subtitle: string;
+  badge: string;
+  benefits: string[];
+  price: string;
+  monogram: string;
+  iconDataUri: string | null;
+  theme: Theme;
+  fontFamily: string;
+  pattern: boolean;
+}
+
+function esc(s: string): string {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** Estrela de 5 pontas centrada em (cx,cy). */
-function star(cx, cy, r, fill) {
-  const pts = [];
+/** Five-pointed star centered at (cx, cy). */
+function star(cx: number, cy: number, r: number, fill: string): string {
+  const pts: string[] = [];
   for (let i = 0; i < 10; i += 1) {
     const rad = i % 2 === 0 ? r : r * 0.42;
     const ang = (Math.PI / 5) * i - Math.PI / 2;
@@ -17,13 +33,13 @@ function star(cx, cy, r, fill) {
   return `<polygon points="${pts.join(' ')}" fill="${fill}"/>`;
 }
 
-/** Check (círculo de destaque + visto) centrado em (cx,cy). */
-function check(cx, cy, t) {
+/** Check mark (highlight circle + tick) centered at (cx, cy). */
+function check(cx: number, cy: number, t: Theme): string {
   return `<circle cx="${cx}" cy="${cy}" r="19" fill="url(#gAccent)"/>
     <path d="M${cx - 8} ${cy} l5 6 l11 -13" fill="none" stroke="${t.bottom}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`;
 }
 
-function defs(t) {
+function defs(t: Theme): string {
   return `<defs>
     <linearGradient id="gBg" x1="0.15" y1="0" x2="0.85" y2="1">
       <stop offset="0" stop-color="${t.top}"/><stop offset="0.55" stop-color="${t.mid}"/><stop offset="1" stop-color="${t.bottom}"/>
@@ -48,8 +64,8 @@ function defs(t) {
   </defs>`;
 }
 
-/** Marca: ícone fornecido (dentro de cartão cerâmico) ou monograma. */
-function mark(cfg, t) {
+/** Mark: provided icon (inside a ceramic card) or a monogram fallback. */
+function mark(cfg: RenderConfig, t: Theme): string {
   const size = 300;
   const cx = 512;
   const cy = 268;
@@ -57,7 +73,7 @@ function mark(cfg, t) {
   const y = cy - size / 2;
   const shadow = `<rect x="${x}" y="${y + 14}" width="${size}" height="${size}" rx="68" fill="${t.shadow}" opacity="0.32" filter="url(#blur)"/>`;
   const card = `<rect x="${x}" y="${y}" width="${size}" height="${size}" rx="68" fill="url(#gCeramic)"/>`;
-  let inner;
+  let inner: string;
   if (cfg.iconDataUri) {
     const pad = 16;
     inner = `<clipPath id="clipIcon"><rect x="${x + pad}" y="${y + pad}" width="${size - 2 * pad}" height="${size - 2 * pad}" rx="54"/></clipPath>
@@ -69,7 +85,7 @@ function mark(cfg, t) {
   return shadow + card + inner + border;
 }
 
-export function buildSvg(cfg) {
+export function buildSvg(cfg: RenderConfig): string {
   const t = cfg.theme;
   const f = `font-family="${cfg.fontFamily}"`;
 
@@ -79,21 +95,19 @@ export function buildSvg(cfg) {
 
   const frame = `<rect x="46" y="46" width="932" height="932" rx="76" fill="none" stroke="${t.accent}" stroke-opacity="0.28" stroke-width="2.5"/>`;
 
-  // Badge com gloss e sombra.
   const badgeText = esc((cfg.badge || '').toUpperCase());
-  const badge = badgeText
-    ? (() => {
-      const w = Math.max(300, 150 + badgeText.length * 30);
-      const bx = 512 - w / 2;
-      return `<g transform="translate(${bx} 452)">
-        <rect x="0" y="7" width="${w}" height="72" rx="36" fill="${t.shadow}" opacity="0.28" filter="url(#blur)"/>
-        <rect width="${w}" height="72" rx="36" fill="url(#gAccent)"/>
-        <rect x="3" y="3" width="${w - 6}" height="34" rx="31" fill="#FFFFFF" fill-opacity="0.22"/>
-        ${star(44, 36, 19, t.bottom)}
-        <text x="${(w + 44) / 2 + 8}" y="49" ${f} font-size="38" font-weight="800" fill="${t.bottom}" text-anchor="middle" letter-spacing="5">${badgeText}</text>
-      </g>`;
-    })()
-    : '';
+  let badge = '';
+  if (badgeText) {
+    const w = Math.max(300, 150 + badgeText.length * 30);
+    const bx = 512 - w / 2;
+    badge = `<g transform="translate(${bx} 452)">
+      <rect x="0" y="7" width="${w}" height="72" rx="36" fill="${t.shadow}" opacity="0.28" filter="url(#blur)"/>
+      <rect width="${w}" height="72" rx="36" fill="url(#gAccent)"/>
+      <rect x="3" y="3" width="${w - 6}" height="34" rx="31" fill="#FFFFFF" fill-opacity="0.22"/>
+      ${star(44, 36, 19, t.bottom)}
+      <text x="${(w + 44) / 2 + 8}" y="49" ${f} font-size="38" font-weight="800" fill="${t.bottom}" text-anchor="middle" letter-spacing="5">${badgeText}</text>
+    </g>`;
+  }
 
   const titleY = badgeText ? 620 : 590;
   const title = `<text x="512" y="${titleY + 4}" ${f} font-size="102" font-weight="900" fill="${t.shadow}" fill-opacity="0.35" text-anchor="middle">${esc(cfg.title)}</text>
@@ -103,9 +117,8 @@ export function buildSvg(cfg) {
     ? `<text x="512" y="${titleY + 56}" ${f} font-size="42" font-weight="600" fill="${t.text}" fill-opacity="0.8" text-anchor="middle">${esc(cfg.subtitle)}</text>`
     : '';
 
-  // Painel "vidro" com os benefícios.
   let panel = '';
-  if (cfg.benefits && cfg.benefits.length) {
+  if (cfg.benefits.length) {
     const px = 162;
     const pw = 700;
     const py = cfg.subtitle ? 712 : 690;

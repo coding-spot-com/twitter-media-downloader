@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// CLI do iap-promo.
+// iap-promo CLI.
 //
 //   npx iap-promo --title "My App Premium" --badge PREMIUM \
 //     --subtitle "Unlock everything" --benefits "No ads|Offline mode|Pro themes" \
@@ -11,7 +11,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
-import { renderToFile, THEMES } from '../src/index.mjs';
+import { renderToFile, THEMES, type PromoConfig } from './index.js';
 
 const HELP = `iap-promo — App Store-compliant promoted IAP images (1024x1024, original art).
 
@@ -39,11 +39,17 @@ Why: Apple Guideline 2.3.2 rejects promoted-IAP images that are screenshots.
 iap-promo renders ORIGINAL art that is compliant by construction (1024x1024,
 sRGB, no alpha, no rounded corners).`;
 
-function parse(argv) {
-  const opts = { fontFiles: [] };
+interface CliOptions extends PromoConfig {
+  config?: string;
+  out?: string;
+  help?: boolean;
+}
+
+function parse(argv: string[]): CliOptions {
+  const opts: CliOptions = { fontFiles: [] };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
-    const next = () => argv[(i += 1)];
+    const next = (): string => argv[(i += 1)];
     switch (a) {
       case '-h': case '--help': opts.help = true; break;
       case '--title': opts.title = next(); break;
@@ -53,48 +59,47 @@ function parse(argv) {
       case '--price': opts.price = next(); break;
       case '--icon': opts.icon = next(); break;
       case '--monogram': opts.monogram = next(); break;
-      case '--theme': opts.theme = next(); break;
-      case '--font': opts.fontFiles.push(next()); break;
+      case '--theme': opts.theme = next() as CliOptions['theme']; break;
+      case '--font': opts.fontFiles!.push(next()); break;
       case '--font-family': opts.fontFamily = next(); break;
       case '--no-pattern': opts.pattern = false; break;
       case '--size': opts.size = Number(next()); break;
       case '--config': opts.config = next(); break;
       case '--out': opts.out = next(); break;
       default:
-        if (a.startsWith('--theme=')) opts.theme = a.slice(8);
-        else console.warn(`iap-promo: opção desconhecida ignorada: ${a}`);
+        if (a.startsWith('--theme=')) opts.theme = a.slice(8) as CliOptions['theme'];
+        else console.warn(`iap-promo: unknown option ignored: ${a}`);
     }
   }
   return opts;
 }
 
-async function main() {
+async function main(): Promise<void> {
   const cli = parse(process.argv.slice(2));
   if (cli.help) {
     console.log(HELP);
     return;
   }
 
-  let fileCfg = {};
+  let fileCfg: PromoConfig & { out?: string } = {};
   if (cli.config) {
     fileCfg = JSON.parse(await readFile(cli.config, 'utf8'));
   }
 
-  // theme pode vir como JSON inline a partir do ficheiro de config.
-  const out = cli.out ?? fileCfg.out ?? 'promo.png';
-  const { config: _ignore, out: _o, help: _h, ...cliRest } = cli;
-  const config = { ...fileCfg, ...cliRest };
-  if (config.fontFiles && config.fontFiles.length === 0) delete config.fontFiles;
+  const { config: _config, out: cliOut, help: _help, ...cliRest } = cli;
+  const out = cliOut ?? fileCfg.out ?? 'promo.png';
+  if (cliRest.fontFiles && cliRest.fontFiles.length === 0) delete cliRest.fontFiles;
 
+  const config: PromoConfig = { ...fileCfg, ...cliRest };
   const { outPath, size } = await renderToFile(config, out);
 
   if (size !== 1024) {
-    console.warn(`⚠ tamanho ${size}px — a App Store exige 1024×1024 para imagens promocionais.`);
+    console.warn(`! size ${size}px — the App Store requires 1024x1024 for promotional images.`);
   }
-  console.log(`✓ ${path.resolve(outPath)}  (${size}×${size}, sRGB, sem alpha — pronto para o App Store Connect)`);
+  console.log(`OK ${path.resolve(outPath)}  (${size}x${size}, sRGB, no alpha — ready for App Store Connect)`);
 }
 
-main().catch((err) => {
-  console.error('iap-promo: erro —', err.message);
+main().catch((err: unknown) => {
+  console.error('iap-promo: error —', err instanceof Error ? err.message : String(err));
   process.exit(1);
 });

@@ -1,5 +1,10 @@
 # iap-promo
 
+[![CI](https://github.com/coding-spot-com/iap-promo/actions/workflows/ci.yml/badge.svg)](https://github.com/coding-spot-com/iap-promo/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/iap-promo.svg)](https://www.npmjs.com/package/iap-promo)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![types](https://img.shields.io/npm/types/iap-promo.svg)](./dist/index.d.ts)
+
 Generate **App Store-compliant promoted In-App Purchase images** — 1024×1024
 original artwork, not screenshots.
 
@@ -125,6 +130,20 @@ theme: {
 - **Original art** — no screenshots, no device frames → passes Guideline 2.3.2
 - Deterministic output (same input → same image)
 
+## Development
+
+Written in TypeScript, bundled with [tsup](https://tsup.egoist.dev/) (ESM + type
+declarations).
+
+```bash
+npm install
+npm run build      # -> dist/ (index.js, cli.js, index.d.ts)
+npm test           # vitest
+npm run typecheck  # tsc --noEmit
+npm run lint       # eslint
+```
+
 ## License
 
 MIT
+
